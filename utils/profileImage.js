@@ -4,8 +4,8 @@ module.exports = async (member, user, nextXP) => {
   const canvas = createCanvas(900, 350);
   const ctx = canvas.getContext("2d");
 
-  // الخلفية
-  const bg = await loadImage("./assets/background.png");
+  // خلفية من الرابط مباشرة
+  const bg = await loadImage("https://image2url.com/r2/default/images/1771107303883-ba908961-6dee-453a-a229-fca88127a391.jpg");
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
   // صورة العضو دائرية أعلى يسار
@@ -17,10 +17,12 @@ module.exports = async (member, user, nextXP) => {
   ctx.drawImage(avatar, 35, 35, 110, 110);
   ctx.restore();
 
-  // الاسم و المستوى
+  // اسم العضو
   ctx.fillStyle = "#ffffff";
   ctx.font = "28px Arial";
   ctx.fillText(member.user.username, 170, 85);
+
+  // المستوى
   ctx.font = "22px Arial";
   ctx.fillText(`LEVEL ${user.level}`, 170, 120);
 
