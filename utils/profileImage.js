@@ -1,13 +1,6 @@
-const { createCanvas, loadImage, registerFont } = require("canvas");
-const path = require("path");
+const { createCanvas, loadImage } = require("canvas");
 
-// سجل أي خطوط خاصة لو تحب
-// registerFont(path.join(__dirname, "fonts", "YourFont.ttf"), { family: "CustomFont" });
-
-// الدالة للرسم المستدير للبار
 function roundRect(ctx, x, y, w, h, r) {
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -17,71 +10,117 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// دالة رئيسية لصناعة الصورة
-module.exports = async (member, userData) => {
-  // قياسات الصورة، نفس بروبوت
-  const width = 934;
-  const height = 282;
+module.exports = async (member, user, config = {}) => {
+  // ===== مقاس بروبوت =====
+  const WIDTH = 1100;
+  const HEIGHT = 360;
 
-  const canvas = createCanvas(width, height);
+  const canvas = createCanvas(WIDTH, HEIGHT);
   const ctx = canvas.getContext("2d");
 
-  // ====== خلفية الصورة ======
-  const background = await loadImage("https://image2url.com/r2/default/images/1771122425455-5c6e9af3-acc3-45b3-8f44-90321a4727b9.jpg");
-  ctx.drawImage(background, 0, 0, width, height);
+  // ===== الخلفية (غيرها براحتك) =====
+  const bg = await loadImage(
+    config.background ||
+    "https://image2url.com/r2/default/images/1771122425455-5c6e9af3-acc3-45b3-8f44-90321a4727b9.jpg"
+  );
+  ctx.drawImage(bg, 0, 0, WIDTH, HEIGHT);
 
-  // ====== معلومات المستخدم ======
-  ctx.font = 'bold 36px Sans'; // أو استخدم خطك المسجل
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(member.user.username, 260, 80); // الاسم
-
-  ctx.font = '28px Sans';
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(`Level: ${userData.level}`, 260, 120);
-  ctx.fillText(`XP: ${userData.xp}`, 260, 160);
-
-  // ====== البارات ======
-  const barWidth = 550;
-  const barHeight = 25;
-  const barX = 260;
-  let barY = 190;
-
-  // helper function لرسم بار
-  const drawBar = (current, max, y, color) => {
-    const pct = Math.min(current / max, 1);
-    // خلفية البار
-    ctx.fillStyle = "#444"; 
-    roundRect(ctx, barX, y, barWidth, barHeight, 12);
-    ctx.fill();
-
-    // البار الفعلي
-    ctx.fillStyle = color;
-    roundRect(ctx, barX, y, barWidth * pct, barHeight, 12);
-    ctx.fill();
-  };
-
-  // توب الكتابي
-  drawBar(userData.textXP, userData.textXPNeeded || 100, barY, "#ff7f50");
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "24px Sans";
-  ctx.fillText("Text XP", barX, barY - 5);
-
-  // توب الصوتي
-  barY += 50;
-  drawBar(userData.voiceXP, userData.voiceXPNeeded || 100, barY, "#1e90ff");
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "24px Sans";
-  ctx.fillText("Voice XP", barX, barY - 5);
-
-  // ====== صورة البروفايل ======
-  const avatar = await loadImage(member.user.displayAvatarURL({ extension: "png" }));
+  // ===== صورة العضو (دائرية يسار) =====
+  const avatar = await loadImage(
+    member.user.displayAvatarURL({ extension: "png", size: 256 })
+  );
   ctx.save();
   ctx.beginPath();
-  ctx.arc(130, height / 2, 110, 0, Math.PI * 2, true);
-  ctx.closePath();
+  ctx.arc(150, 180, 115, 0, Math.PI * 2);
   ctx.clip();
-  ctx.drawImage(avatar, 20, height / 2 - 110, 220, 220);
+  ctx.drawImage(avatar, 35, 65, 230, 230);
   ctx.restore();
+
+  // ===== الاسم =====
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 40px Arial";
+  ctx.fillText(member.user.username, 320, 85);
+
+  // ===== إعدادات البارات =====
+  const BAR_X = 460;
+  const BAR_W = 520;
+  const BAR_H = 28;
+  const RADIUS = 14;
+
+  // ===== بيانات =====
+  const textXP = user.textXP || 0;
+  const voiceXP = user.voiceXP || 0;
+  const nextXP = user.nextXP || 174;
+
+  // ===== بار الكتابي =====
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px Arial";
+  ctx.fillText("LVL", 320, 160);
+  ctx.font = "bold 34px Arial";
+  ctx.fillText(user.textLevel || user.level || 0, 320, 195);
+
+  ctx.font = "28px Arial";
+  ctx.fillText("💬", 370, 192);
+
+  ctx.font = "22px Arial";
+  ctx.fillText(`Rank: #${user.textRank || 1}`, BAR_X, 150);
+  ctx.fillText(`Total: ${textXP}`, BAR_X + 360, 150);
+
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  roundRect(ctx, BAR_X, 170, BAR_W, BAR_H, RADIUS);
+  ctx.fill();
+
+  ctx.fillStyle = "#d8ccff";
+  roundRect(
+    ctx,
+    BAR_X,
+    170,
+    BAR_W * Math.min(textXP / nextXP, 1),
+    BAR_H,
+    RADIUS
+  );
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "20px Arial";
+  ctx.fillText(`${textXP} / ${nextXP}`, BAR_X + 210, 191);
+
+  // ===== بار الصوتي =====
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px Arial";
+  ctx.fillText("LVL", 320, 245);
+  ctx.font = "bold 34px Arial";
+  ctx.fillText(user.voiceLevel || 0, 320, 280);
+
+  ctx.font = "28px Arial";
+  ctx.fillText("🎤", 370, 278);
+
+  ctx.font = "22px Arial";
+  ctx.fillText(`Rank: #${user.voiceRank || 1}`, BAR_X, 235);
+  ctx.fillText(`Total: ${voiceXP}`, BAR_X + 360, 235);
+
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  roundRect(ctx, BAR_X, 255, BAR_W, BAR_H, RADIUS);
+  ctx.fill();
+
+  ctx.fillStyle = "#bfcbff";
+  roundRect(
+    ctx,
+    BAR_X,
+    255,
+    BAR_W * Math.min(voiceXP / nextXP, 1),
+    BAR_H,
+    RADIUS
+  );
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "20px Arial";
+  ctx.fillText(
+    `${voiceXP} / Max`,
+    BAR_X + 215,
+    276
+  );
 
   return canvas.toBuffer();
 };
