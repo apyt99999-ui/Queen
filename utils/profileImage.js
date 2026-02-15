@@ -4,8 +4,8 @@ module.exports = async (member, user, nextXP) => {
   const canvas = createCanvas(900, 350);
   const ctx = canvas.getContext("2d");
 
-  // خلفية من الرابط مباشرة
-  const bg = await loadImage("https://image2url.com/r2/default/images/1771107303883-ba908961-6dee-453a-a229-fca88127a391.jpg");
+  // خلفية
+  const bg = await loadImage("./assets/background.png");
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
   // صورة العضو دائرية أعلى يسار
@@ -24,29 +24,33 @@ module.exports = async (member, user, nextXP) => {
 
   // المستوى
   ctx.font = "22px Arial";
-  ctx.fillText(`LEVEL ${user.level}`, 170, 120);
+  ctx.fillText(`LEVEL ${user.level || 1}`, 170, 120);
+
+  // إذا ما تم تمرير nextXP، نحسبه تلقائياً
+  const effectiveNextXP = nextXP || (user.xp ? Math.ceil(user.xp * 1.2) : 100);
 
   // البار الكتابي
-  const barW = 420, barH = 18;
-  const textP = Math.min(user.textXP / nextXP, 1);
+  const barW = 420, barH = 20;
+  const textP = Math.min((user.textXP || 0) / effectiveNextXP, 1);
   ctx.fillStyle = "#1f2933";
   ctx.fillRect(350, 220, barW, barH);
-  ctx.fillStyle = `hsl(${textP*120}, 100%, 50%)`;
+  ctx.fillStyle = `hsl(${textP * 120}, 100%, 50%)`; // ديناميكي أخضر-أحمر
   ctx.fillRect(350, 220, barW * textP, barH);
   ctx.fillText("📖", 320, 235);
 
   // البار الصوتي
-  const voiceP = Math.min(user.voiceXP / nextXP, 1);
+  const voiceP = Math.min((user.voiceXP || 0) / effectiveNextXP, 1);
   ctx.fillStyle = "#1f2933";
   ctx.fillRect(350, 255, barW, barH);
-  ctx.fillStyle = `hsl(${voiceP*120}, 100%, 50%)`;
+  ctx.fillStyle = `hsl(${voiceP * 120}, 100%, 50%)`;
   ctx.fillRect(350, 255, barW * voiceP, barH);
   ctx.fillText("🎧", 320, 270);
 
   // XP المتبقي
   ctx.font = "18px Arial";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(`XP المتبقي: ${nextXP - user.xp}`, 350, 305);
+  const xpLeft = (effectiveNextXP - (user.xp || 0));
+  ctx.fillText(`XP المتبقي: ${xpLeft > 0 ? xpLeft : 0}`, 350, 305);
 
   return canvas.toBuffer();
 };
