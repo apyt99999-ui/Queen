@@ -5,30 +5,43 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("top")
     .setDescription("عرض التوب اليومي/الأسبوعي/الشهري")
-    .addStringOption(opt => opt.setName("type").setDescription("daily, weekly, monthly, all").setRequired(true))
-    .addIntegerOption(opt => opt.setName("count").setDescription("عدد الأعضاء").setRequired(false)),
+    .addStringOption(o =>
+      o.setName("type")
+       .setDescription("اختر النوع")
+       .setRequired(true)
+       .addChoices(
+         { name: "اليومي", value: "daily" },
+         { name: "الأسبوعي", value: "weekly" },
+         { name: "الشهري", value: "monthly" }
+       )
+    ),
 
   async execute(interaction) {
-    const type = interaction.options.getString("type");
-    let count = interaction.options.getInteger("count") || 5;
+    const type = interaction.options.getString("type"); // daily / weekly / monthly
 
-    let sortField;
-    if (type === "daily") sortField = "dailyXP";
-    else if (type === "weekly") sortField = "weeklyXP";
-    else if (type === "monthly") sortField = "monthlyXP";
-    else sortField = "xp";
+    // جلب جميع المستخدمين من DB
+    let users = await User.find({ guildId: interaction.guild.id });
 
-    const topUsers = await User.find({ guildId: interaction.guild.id }).sort({ [sortField]: -1 }).limit(count);
+    // ترتيب حسب الكتابي
+    const topText = users
+      .sort((a,b) => b[`${type}XP`] - a[`${type}XP`])
+      .slice(0,5)
+      .map((u,i) => `-${i+1} <@${u.userId}> (${u[`${type}XP`]} XP)`)
+      .join("\n");
+
+    // ترتيب حسب الصوتي
+    const topVoice = users
+      .sort((a,b) => b[`${type}VoiceXP`] - a[`${type}VoiceXP`])
+      .slice(0,5)
+      .map((u,i) => `-${i+1} <@${u.userId}> (${u[`${type}VoiceXP`]} XP)`)
+      .join("\n");
 
     const embed = new EmbedBuilder()
-      .setTitle(`🏆 التوب ${type}`)
-      .setColor("#00FF00");
+      .setColor("#000000")
+      .setTitle(`🏆 توب ${type}`)
+      .setDescription(`**التوب الكتابي ${type}**\n${topText}\n[—————————]\n**التوب الصوتي ${type}**\n${topVoice}`)
+      .setFooter({ text: "استخدم /top type:daily/weekly/monthly" });
 
-    topUsers.forEach((u, i) => {
-      const member = interaction.guild.members.cache.get(u.userId);
-      if (member) embed.addFields({ name: `#${i+1} ${member.user.username}`, value: `${u[sortField]} XP`, inline: false });
-    });
-
-    interaction.reply({ embeds: [embed] });
+    await interaction.reply({ embeds: [embed] });
   }
 };
