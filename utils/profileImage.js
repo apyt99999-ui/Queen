@@ -1,87 +1,87 @@
-const { createCanvas, loadImage } = require("canvas");
-const fetch = require("node-fetch");
+const { createCanvas, loadImage, registerFont } = require("canvas");
+const path = require("path");
 
-module.exports = async (member, user, nextXP) => {
-  const canvas = createCanvas(1200, 450);
-  const ctx = canvas.getContext("2d");
+// سجل أي خطوط خاصة لو تحب
+// registerFont(path.join(__dirname, "fonts", "YourFont.ttf"), { family: "CustomFont" });
 
-  // تحميل الخلفية
-  const bgUrl = "https://image2url.com/r2/default/images/1771122425455-5c6e9af3-acc3-45b3-8f44-90321a4727b9.jpg";
-  const response = await fetch(bgUrl);
-  const buffer = await response.buffer();
-  const bg = await loadImage(buffer);
-  ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-
-  // صورة العضو دائرية
-  const avatar = await loadImage(member.user.displayAvatarURL({ extension: "png", size: 512 }));
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(120, 120, 100, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.drawImage(avatar, 20, 20, 200, 200);
-  ctx.restore();
-
-  // اسم العضو
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "36px Arial";
-  ctx.shadowColor = "#000000";
-  ctx.shadowBlur = 4;
-  ctx.fillText(member.user.username, 260, 100);
-
-  // المستوى
-  ctx.font = "28px Arial";
-  ctx.fillText(`LEVEL ${user.level || 1}`, 260, 150);
-
-  // حساب XP للفل القادم
-  const effectiveNextXP = nextXP || (user.xp ? Math.ceil(user.xp * 1.2) : 100);
-
-  // دالة لرسم البارات المدورة مع Gradient
-  const drawBar = (x, y, w, h, progress, emoji) => {
-    // خلفية البار
-    ctx.fillStyle = "#2c2f33";
-    ctx.roundRect(x, y, w, h, 15);
-    ctx.fill();
-
-    // Gradient للبار
-    const grd = ctx.createLinearGradient(x, y, x + w, y);
-    grd.addColorStop(0, "#00ffcc");
-    grd.addColorStop(1, "#0099ff");
-
-    ctx.fillStyle = grd;
-    ctx.roundRect(x, y, w * progress, h, 15);
-    ctx.fill();
-
-    // رسم الإيموجي
-    ctx.font = `${h}px Arial`;
-    ctx.fillText(emoji, x - h - 10, y + h - 4);
-  };
-
-  // البار الكتابي
-  const textP = Math.min((user.textXP || 0) / effectiveNextXP, 1);
-  drawBar(350, 300, 500, 35, textP, "📖");
-
-  // البار الصوتي
-  const voiceP = Math.min((user.voiceXP || 0) / effectiveNextXP, 1);
-  drawBar(350, 370, 500, 35, voiceP, "🎧");
-
-  // XP المتبقي
-  ctx.font = "24px Arial";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(`XP المتبقي: ${Math.max(0, effectiveNextXP - (user.xp || 0))}`, 350, 440);
-
-  return canvas.toBuffer();
-};
-
-// Canvas extension لرسم مستطيل مدور
-CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+// الدالة للرسم المستدير للبار
+function roundRect(ctx, x, y, w, h, r) {
   if (w < 2 * r) r = w / 2;
   if (h < 2 * r) r = h / 2;
-  this.beginPath();
-  this.moveTo(x+r, y);
-  this.arcTo(x+w, y,   x+w, y+h, r);
-  this.arcTo(x+w, y+h, x,   y+h, r);
-  this.arcTo(x,   y+h, x,   y,   r);
-  this.arcTo(x,   y,   x+w, y,   r);
-  this.closePath();
-  return this;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// دالة رئيسية لصناعة الصورة
+module.exports = async (member, userData) => {
+  // قياسات الصورة، نفس بروبوت
+  const width = 934;
+  const height = 282;
+
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+
+  // ====== خلفية الصورة ======
+  const background = await loadImage("https://image2url.com/r2/default/images/1771122425455-5c6e9af3-acc3-45b3-8f44-90321a4727b9.jpg");
+  ctx.drawImage(background, 0, 0, width, height);
+
+  // ====== معلومات المستخدم ======
+  ctx.font = 'bold 36px Sans'; // أو استخدم خطك المسجل
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(member.user.username, 260, 80); // الاسم
+
+  ctx.font = '28px Sans';
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(`Level: ${userData.level}`, 260, 120);
+  ctx.fillText(`XP: ${userData.xp}`, 260, 160);
+
+  // ====== البارات ======
+  const barWidth = 550;
+  const barHeight = 25;
+  const barX = 260;
+  let barY = 190;
+
+  // helper function لرسم بار
+  const drawBar = (current, max, y, color) => {
+    const pct = Math.min(current / max, 1);
+    // خلفية البار
+    ctx.fillStyle = "#444"; 
+    roundRect(ctx, barX, y, barWidth, barHeight, 12);
+    ctx.fill();
+
+    // البار الفعلي
+    ctx.fillStyle = color;
+    roundRect(ctx, barX, y, barWidth * pct, barHeight, 12);
+    ctx.fill();
+  };
+
+  // توب الكتابي
+  drawBar(userData.textXP, userData.textXPNeeded || 100, barY, "#ff7f50");
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "24px Sans";
+  ctx.fillText("Text XP", barX, barY - 5);
+
+  // توب الصوتي
+  barY += 50;
+  drawBar(userData.voiceXP, userData.voiceXPNeeded || 100, barY, "#1e90ff");
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "24px Sans";
+  ctx.fillText("Voice XP", barX, barY - 5);
+
+  // ====== صورة البروفايل ======
+  const avatar = await loadImage(member.user.displayAvatarURL({ extension: "png" }));
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(130, height / 2, 110, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(avatar, 20, height / 2 - 110, 220, 220);
+  ctx.restore();
+
+  return canvas.toBuffer();
 };
