@@ -11,14 +11,14 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 module.exports = async (member, user, config = {}) => {
-  // ===== مقاس بروبوت =====
+  // ===== مقاس قريب جداً من بروبوت =====
   const WIDTH = 1100;
   const HEIGHT = 360;
 
   const canvas = createCanvas(WIDTH, HEIGHT);
   const ctx = canvas.getContext("2d");
 
-  // ===== الخلفية (غيرها براحتك) =====
+  // ===== الخلفية =====
   const bg = await loadImage(
     config.background ||
     "https://image2url.com/r2/default/images/1771122425455-5c6e9af3-acc3-45b3-8f44-90321a4727b9.jpg"
@@ -47,12 +47,11 @@ module.exports = async (member, user, config = {}) => {
   const BAR_H = 28;
   const RADIUS = 14;
 
-  // ===== بيانات =====
   const textXP = user.textXP || 0;
   const voiceXP = user.voiceXP || 0;
   const nextXP = user.nextXP || 174;
 
-  // ===== بار الكتابي =====
+  // ===== البار الكتابي =====
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 22px Arial";
   ctx.fillText("LVL", 320, 160);
@@ -85,8 +84,7 @@ module.exports = async (member, user, config = {}) => {
   ctx.font = "20px Arial";
   ctx.fillText(`${textXP} / ${nextXP}`, BAR_X + 210, 191);
 
-  // ===== بار الصوتي =====
-  ctx.fillStyle = "#ffffff";
+  // ===== البار الصوتي =====
   ctx.font = "bold 22px Arial";
   ctx.fillText("LVL", 320, 245);
   ctx.font = "bold 34px Arial";
@@ -116,11 +114,7 @@ module.exports = async (member, user, config = {}) => {
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "20px Arial";
-  ctx.fillText(
-    `${voiceXP} / Max`,
-    BAR_X + 215,
-    276
-  );
+  ctx.fillText(`${voiceXP} / Max`, BAR_X + 215, 276);
 
   return canvas.toBuffer();
 };
