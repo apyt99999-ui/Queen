@@ -1,11 +1,15 @@
 const { createCanvas, loadImage } = require("canvas");
+const fetch = require("node-fetch"); // لاستخدام روابط الإنترنت
 
 module.exports = async (member, user, nextXP) => {
   const canvas = createCanvas(900, 350);
   const ctx = canvas.getContext("2d");
 
-  // خلفية
-  const bg = await loadImage("./assets/background.png");
+  // خلفية من رابط الإنترنت
+  const bgUrl = "https://image2url.com/r2/default/images/1771122425455-5c6e9af3-acc3-45b3-8f44-90321a4727b9.jpg";
+  const response = await fetch(bgUrl);
+  const buffer = await response.buffer();
+  const bg = await loadImage(buffer);
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
   // صورة العضو دائرية أعلى يسار
@@ -26,7 +30,7 @@ module.exports = async (member, user, nextXP) => {
   ctx.font = "22px Arial";
   ctx.fillText(`LEVEL ${user.level || 1}`, 170, 120);
 
-  // إذا ما تم تمرير nextXP، نحسبه تلقائياً
+  // حساب XP للفل القادم إذا لم يمرر nextXP
   const effectiveNextXP = nextXP || (user.xp ? Math.ceil(user.xp * 1.2) : 100);
 
   // البار الكتابي
@@ -34,7 +38,7 @@ module.exports = async (member, user, nextXP) => {
   const textP = Math.min((user.textXP || 0) / effectiveNextXP, 1);
   ctx.fillStyle = "#1f2933";
   ctx.fillRect(350, 220, barW, barH);
-  ctx.fillStyle = `hsl(${textP * 120}, 100%, 50%)`; // ديناميكي أخضر-أحمر
+  ctx.fillStyle = `hsl(${textP * 120}, 100%, 50%)`;
   ctx.fillRect(350, 220, barW * textP, barH);
   ctx.fillText("📖", 320, 235);
 
