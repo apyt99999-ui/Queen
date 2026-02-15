@@ -16,6 +16,10 @@ const xpVoice = require("./handlers/xpVoice");
 const profileImage = require("./utils/profileImage");
 const User = require("./models/User");
 
+// ====== جديد: Level Embed ======
+const setLevelEmbedCommand = require("./commands/setLevelEmbed");
+const setLevelChannelCommand = require("./commands/setLevelChannel");
+
 require("./utils/resetXP");
 
 // ====== CLIENT ======
@@ -39,6 +43,10 @@ client.commands = new Collection();
 client.commands.set(adminCommand.data.name, adminCommand);
 client.commands.set(topCommand.data.name, topCommand);
 
+// أضف أوامر Level Embed
+client.commands.set(setLevelEmbedCommand.data.name, setLevelEmbedCommand);
+client.commands.set(setLevelChannelCommand.data.name, setLevelChannelCommand);
+
 // ====== REGISTER SLASH COMMANDS (GUILD) ======
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
@@ -52,7 +60,9 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
       {
         body: [
           adminCommand.data.toJSON(),
-          topCommand.data.toJSON()
+          topCommand.data.toJSON(),
+          setLevelEmbedCommand.data.toJSON(),
+          setLevelChannelCommand.data.toJSON()
         ]
       }
     );
@@ -86,7 +96,7 @@ client.on("interactionCreate", async interaction => {
 client.on("messageCreate", async message => {
   if (message.author.bot) return;
 
-  await xpMessage(message);
+  await xpMessage(message); // هنا سيتم دمج sendLevelUp داخل xpMessage
 
   if (message.content === "R") {
     const user = await User.findOne({
